@@ -23,74 +23,53 @@ def plot_hist(mission):
         print('Mission not recognized')
         pass
 
-    df = pd.read_csv('../tables/{mission}_conjunctions_clean.csv'.format(mission=mission)).drop(['Unnamed: 0'], axis=1)
+    df = pd.read_csv('../tables/v2/conjunctions_clean_{mission}.csv'.format(mission=mission)).drop(['Unnamed: 0'], axis=1)
+    df['date'] = pd.to_datetime(df['date'])
 
-    df["radar_mnemonic_unique"] = df["radar_mnemonic"].str[0:3]
+    df = df.sort_values('Location')
 
-    df['location'] = df['radar_mnemonic_unique']
-
-    for i in iter(range(0, len(df))):
-
-        radar = df['radar_mnemonic_unique'][i]
-
-        if str(radar)[0:3] == 'mlh':
-            df['location'][i] = 'Millstone Hill'
-        elif str(radar[0:3]) == 'arg':
-            df['location'][i] = 'Arecibo'
-        elif str(radar[0:3]) == 'arl':
-            df['location'][i] = 'Arecibo'
-        elif str(radar[0:3]) == 'eis':
-            df['location'][i] = 'Tronsø'
-        elif str(radar[0:3]) == 'tro':
-            df['location'][i] = 'Tronsø'
-        elif str(radar[0:3]) == 'jro':
-            df['location'][i] = 'Jicamarca'
-        elif str(radar[0:3]) == 'kpi':
-            df['location'][i] = 'Kharkov'
-        elif str(radar[0:3]) == 'mui':
-            df['location'][i] = 'MU'
-        elif str(radar[0:3]) == 'ran':
-            df['location'][i] = 'Resolute Bay'
-        elif str(radar[0:3]) == 'ras':
-            df['location'][i] = 'Resolute Bay'
-        elif str(radar[0:3]) == 'lyr':
-            df['location'][i] = 'Svalbard'
-        elif str(radar[0:3]) == 'pfa':
-            df['location'][i] = 'Poker Flat'
-
-    df = df[~df.location.str.contains("Kharkov", na=False)]
-    df = df[~df.location.str.contains("MU", na=False)]
-
-    df = df.sort_values('location')
-
-    fig, axs = plt.subplots(4, 2, figsize=(9, 12), sharex=True)
+    fig, axs = plt.subplots(4, 2, figsize=(9, 12))
     axs = axs.flatten()
 
-    fig.delaxes(axs[-1])
-    # histogram
-    # plt.suptitle('{mission_full_name} Conjunctions'.format(mission_full_name=mission_full_name), fontsize=16)
+    # all radars
+    axs[0].hist(df['nel_diff'], bins=np.arange(-2, 2.5, 0.5))
+    axs[0].set_title('all RADARS', fontsize=14)
+    axs[0].set_xticks(np.arange(-2, 2.5, 0.5))
+    ya = axs[0].get_yaxis()
+    ya.set_major_locator(MaxNLocator(integer=True))
+    axs[0].set_ylabel('Count', fontsize=12)
+    # axs[i_radar].set_xlabel(' Ne [$m^{-3}$]', fontsize=12)
+    if mission == 'GR':
+        axs[0].set_xlabel("Log $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]", fontsize=12)
+    elif mission == 'GF':
+        axs[0].set_xlabel("Log $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]", fontsize=12)
 
-    for i_radar, radar_name in enumerate(df.location.unique()):
-        df_plot = df[df.location == radar_name]
-        axs[i_radar].hist(df_plot['ne_diff'],
-                          bins=[-4.5e11, -3.5e11, -2.5e11, -1.5e11, -0.5e11, 0.5e11, 1.5e11, 2.5e11, 3.5e11, 4.5e11])
-        axs[i_radar].set_title('{radar}'.format(radar=radar_name), fontsize=14)
-        axs[i_radar].set_xticks(np.arange(-4e11, 5e11, 1e11))
-        ya = axs[i_radar].get_yaxis()
+    axs[0].text(0.05, 1.05, '{letter})'.format(letter=string.ascii_lowercase[0]),
+                      transform=axs[0].transAxes, fontsize=12)
+
+    for i_radar, radar_name in enumerate(df.Location.unique()):
+        j_radar = i_radar+1
+        df_plot = df[df.Location == radar_name]
+        # axs[i_radar].hist(df_plot['ne_diff'],
+        #                   bins=[-4.5e11, -3.5e11, -2.5e11, -1.5e11, -0.5e11, 0.5e11, 1.5e11, 2.5e11, 3.5e11, 4.5e11])
+        axs[j_radar].hist(df_plot['nel_diff'], bins = np.arange(-2, 2.5 , 0.5))
+        axs[j_radar].set_title('{radar}'.format(radar=radar_name), fontsize=14)
+        axs[j_radar].set_xticks(np.arange(-2, 2.5 , 0.5))
+        ya = axs[j_radar].get_yaxis()
         ya.set_major_locator(MaxNLocator(integer=True))
-        axs[i_radar].set_ylabel('Count', fontsize=12)
-        # axs[i_radar].set_xlabel('Ne [$m^{-3}$]', fontsize=12)
+        axs[j_radar].set_ylabel('Count', fontsize=12)
+        # axs[i_radar].set_xlabel(' Ne [$m^{-3}$]', fontsize=12)
         if mission == 'GR':
-            axs[i_radar].set_xlabel("Difference $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]", fontsize=12)
+            axs[j_radar].set_xlabel("Log $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]", fontsize=12)
         elif mission == 'GF':
-            axs[i_radar].set_xlabel("Difference $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]", fontsize=12)
+            axs[j_radar].set_xlabel("Log $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]", fontsize=12)
 
-        axs[i_radar].text(0.05, 1.05, '{letter})'.format(letter=string.ascii_lowercase[i_radar]), transform=axs[i_radar].transAxes, fontsize=12)
+        axs[j_radar].text(0.05, 1.05, '{letter})'.format(letter=string.ascii_lowercase[j_radar]), transform=axs[j_radar].transAxes, fontsize=12)
 
 
     fig.tight_layout()
     # plt.show()
-    plt.savefig("../figures/hist_{mission}_individual.png".format(mission=mission))
+    plt.savefig("../figures/v2/hist_{mission}_individual.png".format(mission=mission))
     plt.close()
 
     # plot separate graphs
@@ -112,21 +91,22 @@ def plot_hist(mission):
     # plt.close()
     # pass
 
-    fig, ax = plt.subplots(figsize=(7.5, 5))
-    plt.title('{mission_full_name} - all RADARS'.format(mission_full_name=mission_full_name), fontsize=16)
-    plt.hist(df['ne_diff'], bins=[-4.5e11, -3.5e11, -2.5e11, -1.5e11, -0.5e11, 0.5e11, 1.5e11, 2.5e11, 3.5e11, 4.5e11])
-    plt.xticks(np.arange(-4e11, 5e11, 1e11))
-    plt.ylabel('Count', fontsize=12)
-    if mission == 'GR':
-        plt.xlabel("Difference $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]", fontsize=12)
-    elif mission == 'GF':
-        plt.xlabel("Difference $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]", fontsize=12)
-
-    # $Ne_{RADAR}$
-    fig.tight_layout()
-    # plt.show()
-    plt.savefig("../figures/hist_{mission}_sum.png".format(mission=mission))
-    plt.close()
+    # fig, ax = plt.subplots(figsize=(7.5, 5))
+    # plt.title('{mission_full_name} - all RADARS'.format(mission_full_name=mission_full_name), fontsize=16)
+    # plt.hist(df['nel_diff'])
+    # # plt.hist(df['ne_diff'], bins=[-4.5e11, -3.5e11, -2.5e11, -1.5e11, -0.5e11, 0.5e11, 1.5e11, 2.5e11, 3.5e11, 4.5e11])
+    # # plt.xticks(np.arange(-4e11, 5e11, 1e11))
+    # plt.ylabel('Count', fontsize=12)
+    # if mission == 'GR':
+    #     plt.xlabel("Difference $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]", fontsize=12)
+    # elif mission == 'GF':
+    #     plt.xlabel("Difference $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]", fontsize=12)
+    #
+    # # $Ne_{RADAR}$
+    # fig.tight_layout()
+    # # plt.show()
+    # plt.savefig("../figures/v2/hist_{mission}_sum.png".format(mission=mission))
+    # plt.close()
 
 
 plot_hist('GF')
@@ -457,8 +437,8 @@ def process_magtimeday(mission):
 
     df.to_csv('../tables/{mission}_conjunctions_clean_magcoords.csv'.format(mission=mission))
 
-process_magtimeday('GR')
-process_magtimeday('GF')
+# process_magtimeday('GR')
+# process_magtimeday('GF')
 
 def plot_magtimeday(mission):
 
