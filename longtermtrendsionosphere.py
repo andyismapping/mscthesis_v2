@@ -10,6 +10,7 @@ import os
 
 
 import warnings
+import string
 
 warnings.filterwarnings(action='once')
 
@@ -111,29 +112,39 @@ def plot_heatmap(mission):
         Zi_high = np.full(xi.shape, np.nan)
         pass
 
-    fig, axs = plt.subplots(3, sharex=True, sharey=True)
+    levels = np.arange(10, 12.5, 0.25)
 
-    levels = np.arange(0.0e12, 1.6E12, 0.2e12)
 
-    high = axs[0].contourf(xi, yi, Zi_high, levels=levels, cmap='plasma')
-    medium = axs[1].contourf(xi, yi, Zi_medium, levels=levels, cmap='plasma')
-    low = axs[2].contourf(xi, yi, Zi_low, levels=levels, cmap='plasma')
+    fig, axs = plt.subplots(3, figsize=(12, 8), sharex=True, sharey=True)
+
+
+
+    high = axs[0].contourf(xi, yi, np.log10(Zi_high), levels=levels, cmap='plasma')
+    axs[0].text(0.05, 1.05, '{letter})'.format(letter=string.ascii_lowercase[0]), transform=axs[0].transAxes, fontsize=12)
+
+    medium = axs[1].contourf(xi, yi, np.log10(Zi_medium), levels=levels, cmap='plasma')
+    axs[1].text(0.05, 1.05, '{letter})'.format(letter=string.ascii_lowercase[1]), transform=axs[1].transAxes, fontsize=12)
+
+    low = axs[2].contourf(xi, yi, np.log10(Zi_low), levels=levels, cmap='plasma')
+    axs[2].text(0.05, 1.05, '{letter})'.format(letter=string.ascii_lowercase[2]), transform=axs[2].transAxes, fontsize=12)
 
     cbar = plt.colorbar(high, ax=axs)
-    cbar.set_label('Ne [$m^{-3}$]', fontsize=12)
+    cbar.set_label('Log Ne [$m^{-3}$]', fontsize=12)
 
     plt.yticks(np.arange(-60, 61, 30))
     plt.xticks(np.arange(0, 25, 2))
 
     plt.xlabel('Magnetic Local time [hours]', fontsize=12)
-    fig.supylabel('Latitude [degrees]', fontsize=12)
+    axs[0].set_ylabel('Latitude [degrees]', fontsize=12)
+    axs[1].set_ylabel('Latitude [degrees]', fontsize=12)
+    axs[2].set_ylabel('Latitude [degrees]', fontsize=12)
 
-    st = fig.suptitle(f'{mission_full_name}'.format(mission_full_name=mission_full_name), fontsize=16)
-    st.set_y(0.96)
+    # st = fig.suptitle(f'{mission_full_name}'.format(mission_full_name=mission_full_name), fontsize=16)
+    # st.set_y(0.96)
 
-    # fig.tight_layout()
+    fig.tight_layout
     # plt.show()
-    plt.savefig('../figures/heatmap_{mission}.png'.format(mission=mission))
+    plt.savefig('../figures/v2/heatmap_{mission}.png'.format(mission=mission))
     plt.close()
 
 
@@ -155,7 +166,7 @@ def process_semiorbits(mission):
         for hour in range(0,24):
             df_hour = df[df['hour'] == hour]
 
-            output = f'../tables/{mission}_semiorbits_{hour}_v2.csv'
+            output = f'../tables/v2/{mission}_semiorbits_{hour}_v2.csv'
 
             # output = '../tables/semiorbits_{hour}.csv'.format(hour=hour)
 
@@ -242,6 +253,6 @@ def plot_semiorbits(mission, nfig):
         plt.savefig('../figures/{mission}_maglat_Ne_fig_{fig}.png'.format(mission=mission, fig=i))
         plt.close()
 
-plot_semiorbits('GR',nfig=4)
-plot_semiorbits('GF',nfig=4)
+# plot_semiorbits('GR',nfig=4)
+# plot_semiorbits('GF',nfig=4)
 
