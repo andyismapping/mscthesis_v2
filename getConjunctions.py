@@ -341,9 +341,13 @@ def plot_ne_altitude(recnos, radar_old, radar_mean, y_line, x_line, gf_nel, gf_a
 # radar files
 radar_list = glob.glob('../data/external/Madrigal/madrigal/*/*.hdf5')
 radar_list_pokerflat = glob.glob('../data/external/Madrigal/madrigal/PokerFlat/*/*.hdf5')
-radar_list_pokerflat_2017 = glob.glob('/Users/andyaracallegare/Documents/PokerFlat/PokerFlat/2017/*/*.hdf5')
+radar_list_pokerflat_2017 = glob.glob('../data/external/Madrigal/madrigal/PokerFlat/2017/*/*.hdf5')
+# radar_list_north = glob.glob('../data/external/Madrigal/madrigal/ResoluteBayNorthISRadar/*.hdf5')
+# radar_list_canada = glob.glob('../data/external/Madrigal/madrigal/ResoluteBayCanadaISRadar/*.hdf5')
+
 
 radar_list = radar_list + radar_list_pokerflat + radar_list_pokerflat_2017
+# radar_list = radar_list_north + radar_list_canada
 
 radar_list.sort()
 
@@ -483,5 +487,3 @@ for radar_file in radar_list:
 
     except:
         pass
-#lsijaiodnoasd
-
