@@ -440,11 +440,13 @@ def plot_timeseries(mission):
 
     # ax.set_xlim(pd.Timestamp("2002-01"), pd.Timestamp("2020-12"))
 
-    plt.legend()
+    plt.legend(loc='lower left')
 
     # plt.title('GRACE and GRACE-FO Conjunctions', fontsize=16)
     plt.xlabel('Dates', fontsize=18)
     plt.ylabel("Log $Ne$ [$m^{-3}$]", fontsize=18)
+
+    plt.tight_layout()
 
     # plt.show()
     plt.savefig("../figures/v2/timeseries_{mission}.png".format(mission=mission))
