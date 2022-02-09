@@ -13,7 +13,7 @@ import warnings
 import string
 
 warnings.filterwarnings(action='once')
-
+mpl.rcParams.update({'font.size': 16})
 
 def process_heatmap(mission, method, level):
     f107 = pd.read_csv('../data/external/f107/Kp_ap_Ap_SN_F107_since_1932.txt', delimiter=r"\s+", comment='#')
@@ -118,32 +118,34 @@ def plot_heatmap(mission):
     fig, axs = plt.subplots(3, figsize=(12, 8), sharex=True, sharey=True)
 
 
-
     high = axs[0].contourf(xi, yi, np.log10(Zi_high), levels=levels, cmap='plasma')
-    axs[0].text(0.05, 1.05, '{letter})'.format(letter=string.ascii_lowercase[0]), transform=axs[0].transAxes, fontsize=12)
+    axs[0].text(0.05, 1.05, '{letter})'.format(letter=string.ascii_lowercase[0]), transform=axs[0].transAxes, fontsize=16)
 
     medium = axs[1].contourf(xi, yi, np.log10(Zi_medium), levels=levels, cmap='plasma')
-    axs[1].text(0.05, 1.05, '{letter})'.format(letter=string.ascii_lowercase[1]), transform=axs[1].transAxes, fontsize=12)
+    axs[1].text(0.05, 1.05, '{letter})'.format(letter=string.ascii_lowercase[1]), transform=axs[1].transAxes, fontsize=16)
 
     low = axs[2].contourf(xi, yi, np.log10(Zi_low), levels=levels, cmap='plasma')
-    axs[2].text(0.05, 1.05, '{letter})'.format(letter=string.ascii_lowercase[2]), transform=axs[2].transAxes, fontsize=12)
+    axs[2].text(0.05, 1.05, '{letter})'.format(letter=string.ascii_lowercase[2]), transform=axs[2].transAxes, fontsize=16)
 
     cbar = plt.colorbar(high, ax=axs)
-    cbar.set_label('Log Ne [$m^{-3}$]', fontsize=12)
+    cbar.set_label('Log Ne [$m^{-3}$]', fontsize=16)
 
     plt.yticks(np.arange(-60, 61, 30))
     plt.xticks(np.arange(0, 25, 2))
 
-    plt.xlabel('Magnetic Local time [hours]', fontsize=12)
-    axs[0].set_ylabel('Latitude [degrees]', fontsize=12)
-    axs[1].set_ylabel('Latitude [degrees]', fontsize=12)
-    axs[2].set_ylabel('Latitude [degrees]', fontsize=12)
+    # plt.xlabel('Magnetic Local time [hours]', fontsize=16)
+    # axs[0].set_ylabel('Latitude [degrees]', fontsize=16)
+    # axs[1].set_ylabel('Latitude [degrees]', fontsize=16)
+    # axs[2].set_ylabel('Latitude [degrees]', fontsize=16)
 
     # st = fig.suptitle(f'{mission_full_name}'.format(mission_full_name=mission_full_name), fontsize=16)
     # st.set_y(0.96)
 
-    fig.tight_layout
     # plt.show()
+    fig.supylabel('Latitude [degrees]', fontsize=16,x=0.05)
+    fig.supxlabel('Magnetic Local time [hours]', fontsize=16)
+    # fig.tight_layout()
+
     plt.savefig('../figures/v2/heatmap_{mission}.png'.format(mission=mission))
     plt.close()
 
@@ -173,8 +175,8 @@ def process_semiorbits(mission):
             df_hour.to_csv(output, mode='a', header=not os.path.exists(output), index=False)
 
 
-process_semiorbits('GR')
-process_semiorbits('GF')
+# process_semiorbits('GR')
+# process_semiorbits('GF')
 
 def split(a, n):
     k, m = divmod(len(a), n)
@@ -204,55 +206,74 @@ def plot_semiorbits(mission, nfig):
 
         for hour in list_hours:
 
-            df = pd.read_csv('../tables/{mission}_semiorbits_{hour}_v2.csv'.format(mission=mission, hour=hour))
+            df = pd.read_csv('../tables/v2/{mission}_semiorbits_{hour}_v2.csv'.format(mission=mission, hour=hour))
+
+            df['Absolute_Nel'] = np.log10(df['Absolute_Ne'])
 
             # bin lat
             df['mlat'] = np.round(df['mlat'], 0)
 
             # extract mean, max, min
-            df_groupby = df.groupby('mlat').agg({'Absolute_Ne': ['mean', 'min', 'max']})
+            df_groupby = df.groupby('mlat').agg({'Absolute_Nel': ['mean', 'min', 'max']})
 
             # ax1 = plt.subplot(1, 3, 1)
             axs[id_ax].set_xlim(-90, 90)
-            axs[id_ax].scatter(df['mlat'], df['Absolute_Ne'],s=10)
+            axs[id_ax].set_ylim(5,15)
+            axs[id_ax].scatter(df['mlat'], df['Absolute_Nel'],s=10)
             # ax1.set_ylim(-10e11, 10e11)
             # axs[id_ax].set_xlabel("Magnetic Latitude[degrees]", fontsize=12)
             # axs[id_ax].set_ylabel("Ne [$m^{-3}$]", fontsize=12)
+            axs[id_ax].set_ylabel('Hour {hour}'.format(hour=hour), fontsize=18)
+            axs[id_ax].set_xticks(np.arange(-90, 91, 30))
+
+            axs[id_ax].text(0.05, 1.05, '{letter}.1)'.format(letter=string.ascii_lowercase[hour]),
+                            transform=axs[id_ax].transAxes, fontsize=18)
 
             id_ax += 1
 
             # ax2 = plt.subplot(1, 3, 2)
             axs[id_ax].set_xlim(-90, 90)
-            axs[id_ax].plot(df_groupby.index, df_groupby['Absolute_Ne']['mean'])
+            axs[id_ax].set_ylim(10, 12)
+            axs[id_ax].plot(df_groupby.index, df_groupby['Absolute_Nel']['mean'])
             # ax2.set_ylim(-10e10, 10e10)
-            axs[id_ax].set_title('Hour {hour}'.format(hour=hour), fontsize=12)
+            # axs[id_ax].set_title('Hour {hour}'.format(hour=hour), fontsize=18)
             # axs[id_ax].set_xlabel("Magnetic Latitude[degrees]", fontsize=12)
             # axs[id_ax].set_ylabel("Ne [$m^{-3}$]", fontsize=12)
+            axs[id_ax].set_xticks(np.arange(-90, 91, 30))
+
+            axs[id_ax].text(0.05, 1.05, '{letter}.2)'.format(letter=string.ascii_lowercase[hour]),
+                            transform=axs[id_ax].transAxes, fontsize=18)
 
             id_ax += 1
 
             # ax3 = plt.subplot(1, 3, 3)
             axs[id_ax].set_xlim(-90, 90)
-            axs[id_ax].plot(df_groupby.index, df_groupby['Absolute_Ne']['mean'])
-            axs[id_ax].plot(df_groupby.index, df_groupby['Absolute_Ne']['max'])
-            axs[id_ax].plot(df_groupby.index, df_groupby['Absolute_Ne']['min'])
+            axs[id_ax].set_ylim(5, 15)
+            axs[id_ax].plot(df_groupby.index, df_groupby['Absolute_Nel']['mean'])
+            axs[id_ax].plot(df_groupby.index, df_groupby['Absolute_Nel']['max'])
+            axs[id_ax].plot(df_groupby.index, df_groupby['Absolute_Nel']['min'])
             # ax3.set_ylim(-10e11, 10e11)
             # axs[id_ax].set_xlabel("Magnetic Latitude[degrees]", fontsize=12)
             # axs[id_ax].set_ylabel("Ne [$m^{-3}$]", fontsize=12)
+            axs[id_ax].set_xticks(np.arange(-90,91,30))
+
+            axs[id_ax].text(0.05, 1.05, '{letter}.3)'.format(letter=string.ascii_lowercase[hour]),
+                            transform=axs[id_ax].transAxes, fontsize=18)
 
             id_ax += 1
 
-
-        plt.suptitle(f'{mission_full_name}', fontsize=16,fontweight="bold")
+        # plt.suptitle(f'{mission_full_name}', fontsize=16,fontweight="bold")
         # set labels
-        mpl.rcParams.update({'font.size': 12})
-        plt.setp(axes[-1, :], xlabel="Magnetic Latitude[degrees]")
-        plt.setp(axes[:, 0], ylabel="Ne [$m^{-3}$]")
+        # mpl.rcParams.update({'font.size': 16})
+        # plt.setp(axes[-1, :], xlabel="Magnetic Latitude[degrees]")
+        # plt.setp(axes[:, 0], ylabel="Log Ne [$m^{-3}$]")
+        fig.supylabel('Log Ne [$m^{-3}$]', fontsize=18)
+        fig.supxlabel('Magnetic Latitude[degrees]', fontsize=18)
         fig.tight_layout()
         # plt.show()
-        plt.savefig('../figures/{mission}_maglat_Ne_fig_{fig}.png'.format(mission=mission, fig=i))
+        plt.savefig('../figures/v2/{mission}_maglat_Nel_fig_{fig}.png'.format(mission=mission, fig=i))
         plt.close()
 
-# plot_semiorbits('GR',nfig=4)
-# plot_semiorbits('GF',nfig=4)
+# plot_semiorbits('GR',nfig=3)
+# plot_semiorbits('GF',nfig=3)
 
