@@ -324,15 +324,15 @@ def plot_ne_altitude(recnos, radar_old, radar_mean, y_line, x_line, gf_nel, gf_a
     for rec in recnos:
         radar_plot = radar_old[radar_old['recno'] == rec]
         plt.plot(radar_plot['nel'], radar_plot['{}'.format(variables[0])],
-                 alpha=0.25, label = np.unique(radar_plot['dates'])[0])
+                 alpha=0.25, label = pd.to_datetime(np.unique(radar_plot['dates'])[0]).strftime("%Y-%m-%d %H:%M:%S"))
 
-    plt.plot(radar_mean['nel'], radar_mean.index, color='k', label='Radar smoothed average profile')
-    plt.plot(y_line, x_line, '--', color='red', lw=2.5, label='Radar curve fit')
+    plt.plot(radar_mean['nel'], radar_mean.index, color='k', label='Radar moothed average profile')
+    plt.plot(y_line, x_line, '--', color='red', lw=2.5, label='Radar parabola curve fit')
 
 
     plt.axhline(y=gf_alt, color='gray', linestyle='dashed')
-    plt.scatter(gf_nel, gf_alt, marker='X', s=60, color='b', label='GF average')
-    plt.scatter(radar_nel, radar_alt, marker='X', s=60, color='r', label='Radar extrapolated Ne')
+    plt.scatter(gf_nel, gf_alt, marker='X', s=80, color='b', label='GR average Nel')
+    plt.scatter(radar_nel, radar_alt, marker='X', s=80, color='r', label='Radar extrapolated Nel')
 
     plt.xlabel('Log Electron density [$m^{-3}$]')
     plt.ylabel('Altitude [km]')
@@ -354,7 +354,7 @@ def plot_ne_altitude(recnos, radar_old, radar_mean, y_line, x_line, gf_nel, gf_a
 # radar_list.sort()
 
 # radar_list = glob.glob('../data/external/Madrigal/madrigal/PokerFlat/*/pfa100419*')
-radar_list = glob.glob('../data/external/Madrigal/madrigal/*/mlh140927*')
+radar_list = glob.glob('../data/external/Madrigal/madrigal/*/mlh140927i*')
 
 for radar_file in radar_list:
     # print(radar_file.split('/')[-1])
