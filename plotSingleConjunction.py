@@ -323,18 +323,18 @@ def plot_ne_altitude(recnos, radar_old, radar_mean, y_line, x_line, gf_nel, gf_a
 
     for rec in recnos:
         radar_plot = radar_old[radar_old['recno'] == rec]
-        plt.plot(radar_plot['nel'], radar_plot['{}'.format(variables[0])],
-                 alpha=0.25, label = pd.to_datetime(np.unique(radar_plot['dates'])[0]).strftime("%Y-%m-%d %H:%M:%S"))
+        plt.plot(radar_plot['nel'], radar_plot['{}'.format(variables[0])],linestyle='dashed',
+                 alpha=0.5, label = 'Radar at ' + pd.to_datetime(np.unique(radar_plot['dates'])[0]).strftime("%H:%M:%S"))
 
-    plt.plot(radar_mean['nel'], radar_mean.index, color='k', label='Radar moothed average profile')
-    plt.plot(y_line, x_line, '--', color='red', lw=2.5, label='Radar parabola curve fit')
+    plt.plot(radar_mean['nel'], radar_mean.index, color='k', label='Radar smoothed average')
+    plt.plot(y_line, x_line, color='red', lw=2.5, label='Radar parabola curve fit')
 
 
-    plt.axhline(y=gf_alt, color='gray', linestyle='dashed')
-    plt.scatter(gf_nel, gf_alt, marker='X', s=80, color='b', label='GR average Nel')
-    plt.scatter(radar_nel, radar_alt, marker='X', s=80, color='r', label='Radar extrapolated Nel')
+    plt.axhline(y=gf_alt, color='gray', alpha = 0.5)
+    plt.scatter(gf_nel, gf_alt, marker='X', s=80, color='b', label='$Ne_{GR}$')
+    plt.scatter(radar_nel, radar_alt, marker='X', s=80, color='r', label='$Ne_{RADAR}$')
 
-    plt.xlabel('Log Electron density [$m^{-3}$]')
+    plt.xlabel('Log Ne [$m^{-3}$]')
     plt.ylabel('Altitude [km]')
 
     plt.legend(loc='lower left')
@@ -449,7 +449,7 @@ for radar_file in radar_list:
 
                     plot_ne_altitude(recnos, radar_old, radar_mean, y_line, x_line, gf_nel, gf_alt, radar_nel, radar_alt)
 
-                    plt.title(radar_file.split('/')[-1], fontsize='large')
+                    # plt.title(radar_file.split('/')[-1], fontsize='large')
                     plt.savefig("../figures/v2/{name}.png".format(name=radar_file.split('/')[-1]))
                     plt.close()
 

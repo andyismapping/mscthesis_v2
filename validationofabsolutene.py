@@ -214,10 +214,11 @@ def plot_density_timeday(mission):
 
 
     fig.supylabel('Density', fontsize=14)
-    if mission == 'GR':
-        fig.supxlabel('Log $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]', fontsize=14)
-    elif mission == 'GF':
-        fig.supxlabel('Log $Ne_{RADAR}$ - $Ne_{GF}$ [$m^{-3}$]', fontsize=14)
+    fig.supxlabel('Local time [hours]')
+    # if mission == 'GR':
+    #     fig.supxlabel('Log $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]', fontsize=14)
+    # elif mission == 'GF':
+    #     fig.supxlabel('Log $Ne_{RADAR}$ - $Ne_{GF}$ [$m^{-3}$]', fontsize=14)
 
     density = kde.gaussian_kde(df['hour'])
     x = np.arange(0,24, 0.1)
@@ -433,8 +434,8 @@ def plot_timeseries(mission):
 
     ax.xaxis_date()
 
-    months = mdates.MonthLocator(interval=12)
-    ax.xaxis.set_major_locator(months)
+    # months = mdates.MonthLocator(interval=12)
+    # ax.xaxis.set_major_locator(months)
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
     plt.xticks(rotation=45)
 
@@ -452,6 +453,6 @@ def plot_timeseries(mission):
     plt.savefig("../figures/v2/timeseries_{mission}.png".format(mission=mission))
     plt.close()
 
-plot_timeseries('GR')
-plot_timeseries('GF')
+# plot_timeseries('GR')
+# plot_timeseries('GF')
 

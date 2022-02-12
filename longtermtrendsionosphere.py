@@ -7,31 +7,38 @@ from scipy.interpolate import griddata
 from astropy.convolution import Gaussian2DKernel, convolve
 import matplotlib as mpl
 import os
+from scipy.stats import kde
 
 
 import warnings
 import string
 
 warnings.filterwarnings(action='once')
-mpl.rcParams.update({'font.size': 16})
+# mpl.rcParams.update({'font.size': 16})
 
 def process_heatmap(mission, method, level):
-    f107 = pd.read_csv('../data/external/f107/Kp_ap_Ap_SN_F107_since_1932.txt', delimiter=r"\s+", comment='#')
-    f107['date_simplified'] = f107.apply(lambda x: datetime.datetime(int(x['YYYY']), int(x['MM']), int(x['DD'])),
-                                         axis=1)
+    # f107 = pd.read_csv('../data/external/f107/Kp_ap_Ap_SN_F107_since_1932.txt', delimiter=r"\s+", comment='#')
+    # f107['date_simplified'] = f107.apply(lambda x: datetime.datetime(int(x['YYYY']), int(x['MM']), int(x['DD'])),
+    #                                      axis=1)
+
+    f107 = pd.read_fwf('../data/external/f107/omni2_daily_bOKKAhnXtE.lst', names=['year', 'day', 'hour', 'f10.7_index'])
+    f107['date_simplified'] = f107.apply(
+        lambda x: datetime.datetime(int(x.year), 1, 1) + datetime.timedelta(int(x.day) - 1), axis=1)
+    f107['f10.7_index'][f107['f10.7_index'] > 400] = np.nan
+
     if level == 'low':
-        f107 = f107[(f107['F10.7obs'] < 80)]
+        f107 = f107[(f107['f10.7_index'] < 80)]
     elif level == 'medium':
-        f107 = f107[(f107['F10.7obs'] >= 80) & (f107['F10.7obs'] < 120)]
+        f107 = f107[(f107['f10.7_index'] >= 80) & (f107['f10.7_index'] < 120)]
     elif level == 'high':
-        f107 = f107[(f107['F10.7obs'] >= 120)]
+        f107 = f107[(f107['f10.7_index'] >= 120)]
     else:
         print('wrong level')
 
     if mission == 'GR':
-        f107 = f107[(f107['YYYY'] >= 2002) & (f107['YYYY'] <= 2017)]
+        f107 = f107[(f107['year'] >= 2002) & (f107['year'] <= 2017)]
     elif mission == 'GF':
-        f107 = f107[(f107['YYYY'] >= 2018) & (f107['YYYY'] <= 2020)]
+        f107 = f107[(f107['year'] >= 2018) & (f107['year'] <= 2020)]
     else:
         print('wrong mission')
 
@@ -62,7 +69,7 @@ def process_heatmap(mission, method, level):
     df_plot = df_plot.dropna()
 
     zi = griddata((df_plot['mlt'], df_plot['Latitude']), df_plot['Absolute_Ne'], (xi, yi), method=method)
-    np.save("../tables/{mission}_{level}_{method}.npy".format(mission=mission, level=level, method=method), zi)
+    np.save("../tables/v2/{mission}_{level}_{method}.npy".format(mission=mission, level=level, method=method), zi)
 
 
 # process_heatmap(mission='GR', method='nearest', level='high')
@@ -88,7 +95,7 @@ def plot_heatmap(mission):
     g = Gaussian2DKernel(5, 5)
 
     try:
-        Z_low = np.load('../tables/{mission}_low_nearest.npy'.format(mission=mission))
+        Z_low = np.load('../tables/v2/{mission}_low_nearest.npy'.format(mission=mission))
         Zi_low = convolve(Z_low, g)
     except:
         print('Z_low not found')
@@ -96,7 +103,7 @@ def plot_heatmap(mission):
         Zi_low = np.full(xi.shape, np.nan)
 
     try:
-        Z_medium = np.load('../tables/{mission}_medium_nearest.npy'.format(mission=mission))
+        Z_medium = np.load('../tables/v2/{mission}_medium_nearest.npy'.format(mission=mission))
         Zi_medium = convolve(Z_medium, g)
     except:
         print('Z_medium not found')
@@ -104,7 +111,7 @@ def plot_heatmap(mission):
         Zi_medium = np.full(xi.shape, np.nan)
 
     try:
-        Z_high = np.load('../tables/{mission}_high_nearest.npy'.format(mission=mission))
+        Z_high = np.load('../tables/v2/{mission}_high_nearest.npy'.format(mission=mission))
         Zi_high = convolve(Z_high, g)
     except:
         print('Z_high not found')
@@ -153,36 +160,8 @@ def plot_heatmap(mission):
 # plot_heatmap('GR')
 # plot_heatmap('GF')
 
-def process_semiorbits(mission):
 
-    df_list = glob.glob(
-                '../data/processed/Absolute_Ne_v2/*/{mission}_OPER_NE__KBR_2F_*.cdf.csv'.format(mission=mission))
-
-    for df_file in df_list:
-        df = pd.read_csv(df_file, usecols=['Timestamp','mlat', 'mlt', 'Absolute_Ne'])
-
-        df = df.dropna()
-
-        df['hour']= df.mlt.apply(lambda x : int(x))
-
-        for hour in range(0,24):
-            df_hour = df[df['hour'] == hour]
-
-            output = f'../tables/v2/{mission}_semiorbits_{hour}_v2.csv'
-
-            # output = '../tables/semiorbits_{hour}.csv'.format(hour=hour)
-
-            df_hour.to_csv(output, mode='a', header=not os.path.exists(output), index=False)
-
-
-# process_semiorbits('GR')
-# process_semiorbits('GF')
-
-def split(a, n):
-    k, m = divmod(len(a), n)
-    return (a[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(n))
-
-def plot_semiorbits(mission, nfig):
+def plot_semiorbits_mean(mission):
 
     if mission == 'GR':
         mission_full_name = 'GRACE'
@@ -192,88 +171,67 @@ def plot_semiorbits(mission, nfig):
         print('Mission not recognized')
         pass
 
-    hours = np.arange(0,24,1)
-    hours_idx= np.array_split(hours, nfig)
 
-    for i in range(0,nfig):
-        list_hours = hours_idx[i]
-        nrows = len(list_hours)
+    # fig, axes = plt.subplots(8,3, figsize=(20, 16), sharex=True, sharey=True)
+    # axs = axes.flatten()
+    fig, axes = plt.subplots(4,1, figsize=(12, 8), sharex=True, sharey=True)
+    axs = axes.flatten()
+    mlat = np.arange(-90, 90, 2.5)
 
-        fig, axes = plt.subplots(nrows, 3, figsize=(16, 2*nrows), sharex=True)
-        axs = axes.flatten()
+    cmap = plt.get_cmap('plasma')
+    slicedCM = cmap(np.linspace(0, 1, 24))
 
-        id_ax = 0
+    for id_ax in range(4):
 
-        for hour in list_hours:
+        if id_ax == 0:
+            loop_time = np.arange(0,6)
+        if id_ax == 1:
+            loop_time = np.arange(6, 12)
+        if id_ax == 2:
+            loop_time = np.arange(12,18)
+        if id_ax == 3:
+            loop_time = np.arange(18, 24)
+
+
+        for hour in range(0,24):
 
             df = pd.read_csv('../tables/v2/{mission}_semiorbits_{hour}_v2.csv'.format(mission=mission, hour=hour))
 
             df['Absolute_Nel'] = np.log10(df['Absolute_Ne'])
 
-            # bin lat
-            df['mlat'] = np.round(df['mlat'], 0)
+            absolute_ne = (df.groupby(pd.cut(df['mlat'], bins=np.arange(-90, 91,2.5)))['Absolute_Nel'].mean()).values
+            axs[id_ax].plot(mlat, absolute_ne, color='gray', ls ='dashed', alpha = 0.5)
 
-            # extract mean, max, min
-            df_groupby = df.groupby('mlat').agg({'Absolute_Nel': ['mean', 'min', 'max']})
+        for hour in loop_time:
 
-            # ax1 = plt.subplot(1, 3, 1)
-            axs[id_ax].set_xlim(-90, 90)
-            axs[id_ax].set_ylim(5,15)
-            axs[id_ax].scatter(df['mlat'], df['Absolute_Nel'],s=10)
-            # ax1.set_ylim(-10e11, 10e11)
-            # axs[id_ax].set_xlabel("Magnetic Latitude[degrees]", fontsize=12)
-            # axs[id_ax].set_ylabel("Ne [$m^{-3}$]", fontsize=12)
-            axs[id_ax].set_ylabel('Hour {hour}'.format(hour=hour), fontsize=18)
-            axs[id_ax].set_xticks(np.arange(-90, 91, 30))
+            df = pd.read_csv('../tables/v2/{mission}_semiorbits_{hour}_v2.csv'.format(mission=mission, hour=hour))
 
-            axs[id_ax].text(0.05, 1.05, '{letter}.1)'.format(letter=string.ascii_lowercase[hour]),
-                            transform=axs[id_ax].transAxes, fontsize=18)
+            df['Absolute_Nel'] = np.log10(df['Absolute_Ne'])
 
-            id_ax += 1
+            absolute_ne = (df.groupby(pd.cut(df['mlat'], bins=np.arange(-90, 91,2.5)))['Absolute_Nel'].mean()).values
+            axs[id_ax].plot(mlat, absolute_ne, color= slicedCM[hour], label = ('Hour {hour}').format(hour=hour), lw=2)
 
-            # ax2 = plt.subplot(1, 3, 2)
-            axs[id_ax].set_xlim(-90, 90)
-            axs[id_ax].set_ylim(10, 12)
-            axs[id_ax].plot(df_groupby.index, df_groupby['Absolute_Nel']['mean'])
-            # ax2.set_ylim(-10e10, 10e10)
-            # axs[id_ax].set_title('Hour {hour}'.format(hour=hour), fontsize=18)
-            # axs[id_ax].set_xlabel("Magnetic Latitude[degrees]", fontsize=12)
-            # axs[id_ax].set_ylabel("Ne [$m^{-3}$]", fontsize=12)
-            axs[id_ax].set_xticks(np.arange(-90, 91, 30))
+        axs[id_ax].legend(loc='upper right')
+        axs[id_ax].text(0.05, 1.05, '{letter})'.format(letter=string.ascii_lowercase[id_ax]),
+                    transform=axs[id_ax].transAxes, fontsize=16)
 
-            axs[id_ax].text(0.05, 1.05, '{letter}.2)'.format(letter=string.ascii_lowercase[hour]),
-                            transform=axs[id_ax].transAxes, fontsize=18)
 
-            id_ax += 1
+    plt.xlim(-90, 90)
+    plt.xticks(np.arange(-90, 91, 15))
 
-            # ax3 = plt.subplot(1, 3, 3)
-            axs[id_ax].set_xlim(-90, 90)
-            axs[id_ax].set_ylim(5, 15)
-            axs[id_ax].plot(df_groupby.index, df_groupby['Absolute_Nel']['mean'])
-            axs[id_ax].plot(df_groupby.index, df_groupby['Absolute_Nel']['max'])
-            axs[id_ax].plot(df_groupby.index, df_groupby['Absolute_Nel']['min'])
-            # ax3.set_ylim(-10e11, 10e11)
-            # axs[id_ax].set_xlabel("Magnetic Latitude[degrees]", fontsize=12)
-            # axs[id_ax].set_ylabel("Ne [$m^{-3}$]", fontsize=12)
-            axs[id_ax].set_xticks(np.arange(-90,91,30))
+    plt.ylim(10.25,12)
+    # plt.yticks(np.arange(10.25,11.51,0.25))
 
-            axs[id_ax].text(0.05, 1.05, '{letter}.3)'.format(letter=string.ascii_lowercase[hour]),
-                            transform=axs[id_ax].transAxes, fontsize=18)
 
-            id_ax += 1
+    fig.supylabel('Log Ne [$m^{-3}$]', fontsize=16) #,x=0.05)
+    fig.supxlabel('Magnetic Latitude [degrees]', fontsize=16)
 
-        # plt.suptitle(f'{mission_full_name}', fontsize=16,fontweight="bold")
-        # set labels
-        # mpl.rcParams.update({'font.size': 16})
-        # plt.setp(axes[-1, :], xlabel="Magnetic Latitude[degrees]")
-        # plt.setp(axes[:, 0], ylabel="Log Ne [$m^{-3}$]")
-        fig.supylabel('Log Ne [$m^{-3}$]', fontsize=18)
-        fig.supxlabel('Magnetic Latitude[degrees]', fontsize=18)
-        fig.tight_layout()
-        # plt.show()
-        plt.savefig('../figures/v2/{mission}_maglat_Nel_fig_{fig}.png'.format(mission=mission, fig=i))
-        plt.close()
+    fig.tight_layout()
+    # plt.show()
+    plt.savefig('../figures/v2/{mission}_maglat_Nel_fig_all_mean.png'.format(mission=mission))
+    plt.close()
 
-# plot_semiorbits('GR',nfig=3)
-# plot_semiorbits('GF',nfig=3)
+# plot_semiorbits_mean('GF')
+# plot_semiorbits_mean('GR')
+
 
