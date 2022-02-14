@@ -56,7 +56,7 @@ def process_heatmap(mission, method, level):
                 '../data/processed/Absolute_Ne_v2/*/{mission}_OPER_NE__KBR_2F_{date}*.cdf.csv'.format(mission=mission,
                                                                                                    date=date.strftime(
                                                                                                        '%Y%m%d')))
-            df = pd.read_csv(df_file[0], usecols=['Latitude', 'mlt', 'Absolute_Ne'])
+            df = pd.read_csv(df_file[0], usecols=['mlat', 'mlt', 'Absolute_Ne'])
             df_plot = df_plot.append(df)
 
         except:
@@ -68,14 +68,14 @@ def process_heatmap(mission, method, level):
 
     df_plot = df_plot.dropna()
 
-    zi = griddata((df_plot['mlt'], df_plot['Latitude']), df_plot['Absolute_Ne'], (xi, yi), method=method)
-    np.save("../tables/v2/{mission}_{level}_{method}.npy".format(mission=mission, level=level, method=method), zi)
+    zi = griddata((df_plot['mlt'], df_plot['mlat']), df_plot['Absolute_Ne'], (xi, yi), method=method)
+    np.save("../tables/v2/{mission}_{level}_{method}_mlat.npy".format(mission=mission, level=level, method=method), zi)
 
 
 # process_heatmap(mission='GR', method='nearest', level='high')
 # process_heatmap(mission='GR', method='nearest', level='medium')
 # process_heatmap(mission='GR', method='nearest', level='low')
-# process_heatmap(mission='GF', method='nearest', level='high')
+# # process_heatmap(mission='GF', method='nearest', level='high')
 # process_heatmap(mission='GF', method='nearest', level='medium')
 # process_heatmap(mission='GF', method='nearest', level='low')
 
@@ -92,10 +92,10 @@ def plot_heatmap(mission):
     x = np.arange(0, 24, 0.1)
     xi, yi = np.meshgrid(x, y)
 
-    g = Gaussian2DKernel(5, 5)
+    g = Gaussian2DKernel(5, 10)
 
     try:
-        Z_low = np.load('../tables/v2/{mission}_low_nearest.npy'.format(mission=mission))
+        Z_low = np.load('../tables/v2/{mission}_low_nearest_mlat.npy'.format(mission=mission))
         Zi_low = convolve(Z_low, g)
     except:
         print('Z_low not found')
@@ -103,7 +103,7 @@ def plot_heatmap(mission):
         Zi_low = np.full(xi.shape, np.nan)
 
     try:
-        Z_medium = np.load('../tables/v2/{mission}_medium_nearest.npy'.format(mission=mission))
+        Z_medium = np.load('../tables/v2/{mission}_medium_nearest_mlat.npy'.format(mission=mission))
         Zi_medium = convolve(Z_medium, g)
     except:
         print('Z_medium not found')
@@ -111,7 +111,7 @@ def plot_heatmap(mission):
         Zi_medium = np.full(xi.shape, np.nan)
 
     try:
-        Z_high = np.load('../tables/v2/{mission}_high_nearest.npy'.format(mission=mission))
+        Z_high = np.load('../tables/v2/{mission}_high_nearest_mlat.npy'.format(mission=mission))
         Zi_high = convolve(Z_high, g)
     except:
         print('Z_high not found')
@@ -119,7 +119,7 @@ def plot_heatmap(mission):
         Zi_high = np.full(xi.shape, np.nan)
         pass
 
-    levels = np.arange(10, 12.5, 0.25)
+    levels = np.arange(10, 12.75, 0.25)
 
 
     fig, axs = plt.subplots(3, figsize=(12, 8), sharex=True, sharey=True)
@@ -127,6 +127,10 @@ def plot_heatmap(mission):
 
     high = axs[0].contourf(xi, yi, np.log10(Zi_high), levels=levels, cmap='plasma')
     axs[0].text(0.05, 1.05, '{letter})'.format(letter=string.ascii_lowercase[0]), transform=axs[0].transAxes, fontsize=16)
+    if mission == 'GF':
+        axs[0].text(xi.mean(), yi.mean(), 'NO DATA', ha='center', va='center', color='k', fontsize=16)
+    else:
+        pass
 
     medium = axs[1].contourf(xi, yi, np.log10(Zi_medium), levels=levels, cmap='plasma')
     axs[1].text(0.05, 1.05, '{letter})'.format(letter=string.ascii_lowercase[1]), transform=axs[1].transAxes, fontsize=16)
@@ -149,7 +153,7 @@ def plot_heatmap(mission):
     # st.set_y(0.96)
 
     # plt.show()
-    fig.supylabel('Latitude [degrees]', fontsize=16,x=0.05)
+    fig.supylabel('Magnetic Latitude [degrees]', fontsize=16,x=0.05)
     fig.supxlabel('Magnetic Local time [hours]', fontsize=16)
     # fig.tight_layout()
 
@@ -157,8 +161,8 @@ def plot_heatmap(mission):
     plt.close()
 
 
-# plot_heatmap('GR')
-# plot_heatmap('GF')
+plot_heatmap('GR')
+plot_heatmap('GF')
 
 
 def plot_semiorbits_mean(mission):

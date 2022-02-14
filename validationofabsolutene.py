@@ -29,7 +29,7 @@ def plot_hist(mission):
 
     df = df.sort_values('Location')
 
-    fig, axs = plt.subplots(4, 2, figsize=(9, 12),sharex=True, sharey=True)
+    fig, axs = plt.subplots(4, 2, sharex=True, sharey=True)
     axs = axs.flatten()
 
     # all radars
@@ -49,6 +49,7 @@ def plot_hist(mission):
         axs[j_radar].set_title('{radar}'.format(radar=radar_name), fontsize=14)
         axs[j_radar].text(0.05, 1.05, '{letter})'.format(letter=string.ascii_lowercase[j_radar]), transform=axs[j_radar].transAxes, fontsize=14)
 
+
         # density = kde.gaussian_kde(df_plot['nel_diff'])
         # x = np.arange(-2, 2.5, 0.1)
         # y = density(x)
@@ -56,9 +57,9 @@ def plot_hist(mission):
 
     fig.supylabel('Count', fontsize=14)
     if mission == 'GR':
-        fig.supxlabel('Log $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]', fontsize=14)
+        fig.supxlabel('$Ne_{GR}$ - Log $Ne_{RADAR}$ [$m^{-3}$]', fontsize=14)
     elif mission == 'GF':
-        fig.supxlabel('Log $Ne_{RADAR}$ - $Ne_{GF}$ [$m^{-3}$]', fontsize=14)
+        fig.supxlabel('$Ne_{GF}$ - Log $Ne_{RADAR}$ [$m^{-3}$]', fontsize=14)
 
     fig.tight_layout()
     # plt.show()
@@ -67,6 +68,56 @@ def plot_hist(mission):
 
 # plot_hist('GF')
 # plot_hist('GR')
+
+def plot_hist_single():
+
+
+
+    # fig, axs = plt.subplots()
+    # axs = axs.flatten()
+
+    for id_ax in range(0,2):
+
+        if id_ax == 0:
+            df = pd.read_csv('../tables/v2/conjunctions_clean_{mission}.csv'.format(mission='GR')).drop(
+                ['Unnamed: 0'], axis=1)
+            df['date'] = pd.to_datetime(df['date'])
+            df = df.dropna()
+            fig, axs = plt.subplots()
+            axs.set_xlabel('$Ne_{GR}$ - Log $Ne_{RADAR}$ [$m^{-3}$]', fontsize=14)
+        else:
+            df = pd.read_csv('../tables/v2/conjunctions_clean_{mission}.csv'.format(mission='GF')).drop(
+                ['Unnamed: 0'], axis=1)
+            df['date'] = pd.to_datetime(df['date'])
+            df = df.dropna()
+            fig, axs = plt.subplots()
+            axs.set_xlabel('$Ne_{GF}$ - Log $Ne_{RADAR}$ [$m^{-3}$]', fontsize=14)
+
+        # all radars
+        axs.hist(df['nel_diff'], bins=np.arange(-2, 2.5, 0.1),density=False)
+        # axs.text(0.05, 1.05, '{letter})'.format(letter=string.ascii_lowercase[id_ax]),
+        #                   transform=axs[id_ax].transAxes, fontsize=14)
+        axs.set_xticks(np.arange(-2, 2.5, 0.5))
+        axs.set_ylabel('Count', fontsize=14)
+
+
+
+
+
+        # fig.supylabel('Count', fontsize=14)
+        # fig.supxlabel('$Ne_{GR}$ - Log $Ne_{RADAR}$ [$m^{-3}$]', fontsize=14)
+        # if mission == 'GR':
+        #     fig.supxlabel('$Ne_{GR}$ - Log $Ne_{RADAR}$ [$m^{-3}$]', fontsize=14)
+        # elif mission == 'GF':
+        #     plt.xlabel('$Ne_{GF}$ - Log $Ne_{RADAR}$ [$m^{-3}$]', fontsize=14)
+
+
+        fig.tight_layout()
+        # plt.show()
+        plt.savefig("../figures/v2/hist_single_{idx}.png".format(idx=id_ax))
+        plt.close()
+
+# plot_hist_single()
 
 def plot_density(mission):
     if mission == 'GR':
@@ -96,9 +147,9 @@ def plot_density(mission):
 
     fig.supylabel('Density', fontsize=14)
     if mission == 'GR':
-        fig.supxlabel('Log $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]', fontsize=14)
+        fig.supxlabel('Log $Ne_{GR}$ - $Ne_{RADAR}$ [$m^{-3}$]', fontsize=14)
     elif mission == 'GF':
-        fig.supxlabel('Log $Ne_{RADAR}$ - $Ne_{GF}$ [$m^{-3}$]', fontsize=14)
+        fig.supxlabel('Log $Ne_{GF}$ - $Ne_{RADAR}$ [$m^{-3}$]', fontsize=14)
 
     density = kde.gaussian_kde(df['nel_diff'])
     x = np.arange(-2, 2.5, 0.1)
@@ -106,6 +157,7 @@ def plot_density(mission):
     axs.plot(x,y,'k', ls='dashed', lw=3, label = 'All Radars')
 
     plt.legend()
+    axs.set_xticks(np.arange(-2, 2.5, 0.5))
 
     fig.tight_layout()
     # plt.show()
@@ -166,9 +218,9 @@ def plot_timeday(mission):
 
     plt.xlabel('Local time [hours]', fontsize=14)
     if mission == 'GR':
-        plt.ylabel("Difference $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]", fontsize=14)
+        plt.ylabel("Difference $Ne_{GR}$ - $Ne_{RADAR}$ [$m^{-3}$]", fontsize=14)
     elif mission == 'GF':
-        plt.ylabel("Difference $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]", fontsize=14)
+        plt.ylabel("Difference $Ne_{GF}$ - $Ne_{RADAR}$ [$m^{-3}$]", fontsize=14)
 
     # plt.show()
     plt.tight_layout()
@@ -456,3 +508,65 @@ def plot_timeseries(mission):
 # plot_timeseries('GR')
 # plot_timeseries('GF')
 
+def plot_density_timeday_hour(mission):
+    cmap = plt.get_cmap('GnBu')
+    slicedCM = cmap(np.linspace(0, 1, 24))
+
+    if mission == 'GR':
+        mission_full_name = 'GRACE'
+    elif mission == 'GF':
+        mission_full_name = 'GRACE-FO'
+    else:
+        print('Mission not recognized')
+        pass
+
+    df = pd.read_csv('../tables/v2/conjunctions_clean_{mission}.csv'.format(mission=mission)).drop(['Unnamed: 0'], axis=1)
+    df['date'] = pd.to_datetime(df['date'])
+    df = df.dropna()
+
+    df['date_local'] = df.apply(lambda x: calc_localtime(x.Longitude, x.date), axis=1)
+
+    df['hour'] = df.date.apply(lambda x: (x.hour + x.minute/60 + x.second/3600))
+
+    df['hour'] = df.hour.apply(lambda x: int(x))
+
+    df = df.sort_values('hour')
+
+    fig, axs = plt.subplots()
+
+    for i_radar, radar_hour in enumerate(df.hour.unique()):
+        df_plot = df[df.hour == radar_hour]
+
+        try:
+            density = kde.gaussian_kde(df_plot['nel_diff'])
+            x = np.arange(-2, 2.5, 0.1)
+            y = density(x)
+            axs.plot(x, y, label = radar_hour, color = slicedCM[radar_hour])
+
+        except:
+            pass
+
+
+    fig.supylabel('Density', fontsize=14)
+    # fig.supxlabel('Local time [hours]')
+    if mission == 'GR':
+        fig.supxlabel('Log $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]', fontsize=14)
+    elif mission == 'GF':
+        fig.supxlabel('Log $Ne_{RADAR}$ - $Ne_{GF}$ [$m^{-3}$]', fontsize=14)
+
+    ensity = kde.gaussian_kde(df['nel_diff'])
+    x = np.arange(-2, 2.5, 0.1)
+    y = density(x)
+    axs.plot(x, y, 'k', ls='dashed', lw=3,label='All hours')
+
+    plt.legend(ncol=2)
+
+    axs.set_xticks(np.arange(-2, 2.5, 0.5))
+
+    fig.tight_layout()
+    # plt.show()
+    plt.savefig("../figures/v2/densitytimeday_{mission}_hour_individual.png".format(mission=mission))
+    plt.close()
+
+plot_density_timeday_hour('GF')
+plot_density_timeday_hour('GR')
