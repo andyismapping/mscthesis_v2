@@ -63,7 +63,7 @@ def process_heatmap(mission, method, level):
             pass
 
     yi = np.arange(-60, 60, 0.1)
-    xi = np.arange(0, 24, 0.1)
+    xi = np.arange(0, 24, 0.01)
     xi, yi = np.meshgrid(xi, yi)
 
     df_plot = df_plot.dropna()
@@ -88,11 +88,14 @@ def plot_heatmap(mission):
         print('Mission not recognized')
         pass
 
+    # y = np.arange(-60, 60, 0.1)
+    # x = np.arange(0, 24, 0.1)
     y = np.arange(-60, 60, 0.1)
-    x = np.arange(0, 24, 0.1)
+    x = np.arange(0, 24, 0.01)
     xi, yi = np.meshgrid(x, y)
 
-    g = Gaussian2DKernel(5, 10)
+    # g = Gaussian2DKernel(5, 10)
+    g = Gaussian2DKernel(10,20)
 
     try:
         Z_low = np.load('../tables/v2/{mission}_low_nearest_mlat.npy'.format(mission=mission))
@@ -161,8 +164,8 @@ def plot_heatmap(mission):
     plt.close()
 
 
-plot_heatmap('GR')
-plot_heatmap('GF')
+# plot_heatmap('GR')
+# plot_heatmap('GF')
 
 
 def plot_semiorbits_mean(mission):

@@ -520,53 +520,192 @@ def plot_density_timeday_hour(mission):
         print('Mission not recognized')
         pass
 
-    df = pd.read_csv('../tables/v2/conjunctions_clean_{mission}.csv'.format(mission=mission)).drop(['Unnamed: 0'], axis=1)
-    df['date'] = pd.to_datetime(df['date'])
-    df = df.dropna()
+    fig, axs = plt.subplots(1, 2,figsize=(12, 5))
+    axs = axs.flatten()
 
-    df['date_local'] = df.apply(lambda x: calc_localtime(x.Longitude, x.date), axis=1)
+    for id_ax in range(0,2):
 
-    df['hour'] = df.date.apply(lambda x: (x.hour + x.minute/60 + x.second/3600))
+        if id_ax == 1:
 
-    df['hour'] = df.hour.apply(lambda x: int(x))
+            df = pd.read_csv('../tables/v2/conjunctions_clean_{mission}.csv'.format(mission=mission)).drop(['Unnamed: 0'], axis=1)
+            df['date'] = pd.to_datetime(df['date'])
+            df = df.dropna()
 
-    df = df.sort_values('hour')
+            df['date_local'] = df.apply(lambda x: calc_localtime(x.Longitude, x.date), axis=1)
 
-    fig, axs = plt.subplots()
+            df['hour'] = df.date.apply(lambda x: (x.hour + x.minute/60 + x.second/3600))
 
-    for i_radar, radar_hour in enumerate(df.hour.unique()):
-        df_plot = df[df.hour == radar_hour]
+            df['hour'] = df.hour.apply(lambda x: int(x))
 
-        try:
-            density = kde.gaussian_kde(df_plot['nel_diff'])
+            df = df.sort_values('hour')
+
+            # fig, axs = plt.subplots()
+
+            for i_radar, radar_hour in enumerate(df.hour.unique()):
+                df_plot = df[df.hour == radar_hour]
+
+                try:
+                    density = kde.gaussian_kde(df_plot['nel_diff'])
+                    x = np.arange(-2, 2.5, 0.1)
+                    y = density(x)
+                    axs[id_ax].plot(x, y, label = radar_hour, color = slicedCM[radar_hour])
+
+                except:
+                    pass
+
+            density = kde.gaussian_kde(df['nel_diff'])
             x = np.arange(-2, 2.5, 0.1)
             y = density(x)
-            axs.plot(x, y, label = radar_hour, color = slicedCM[radar_hour])
+            axs[id_ax].plot(x, y, 'k', ls='dashed', lw=3, label='All hours')
 
-        except:
-            pass
+            axs[id_ax].legend(ncol=2)
+            axs[id_ax].text(0.05, 1.05, '{letter})'.format(letter=string.ascii_lowercase[id_ax]),
+                            transform=axs[id_ax].transAxes, fontsize=14)
+
+            axs[id_ax].set_xticks(np.arange(-2, 2.5, 0.5))
+
+            axs[id_ax].set_ylabel('Density')
+
+            if mission == 'GR':
+                axs[id_ax].set_xlabel('Log $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]', fontsize=14)
+            elif mission == 'GF':
+                axs[id_ax].set_xlabel('Log $Ne_{RADAR}$ - $Ne_{GF}$ [$m^{-3}$]', fontsize=14)
+
+        elif id_ax == 0:
+
+            df = pd.read_csv('../tables/v2/conjunctions_clean_{mission}.csv'.format(mission=mission)).drop(
+                ['Unnamed: 0'], axis=1)
+            df['date'] = pd.to_datetime(df['date'])
+            df = df.dropna()
+
+            df['date_local'] = df.apply(lambda x: calc_localtime(x.Longitude, x.date), axis=1)
+
+            df['hour'] = df.date.apply(lambda x: (x.hour + x.minute / 60 + x.second / 3600))
+
+            df = df.sort_values('Location')
+
+            # fig, axs = plt.subplots()
+
+            for i_radar, radar_name in enumerate(df.Location.unique()):
+                df_plot = df[df.Location == radar_name]
+
+                density = kde.gaussian_kde(df_plot['hour'])
+                x = np.arange(0, 24, 0.1)
+                y = density(x)
+                axs[id_ax].plot(x, y, label=radar_name)
 
 
-    fig.supylabel('Density', fontsize=14)
-    # fig.supxlabel('Local time [hours]')
-    if mission == 'GR':
-        fig.supxlabel('Log $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]', fontsize=14)
-    elif mission == 'GF':
-        fig.supxlabel('Log $Ne_{RADAR}$ - $Ne_{GF}$ [$m^{-3}$]', fontsize=14)
+            density = kde.gaussian_kde(df['hour'])
+            x = np.arange(0, 24, 0.1)
+            y = density(x)
+            axs[id_ax].plot(x, y, 'k', ls='dashed', lw=3, label='All Radars')
+            axs[id_ax].set_xlim(0, 24)
+            axs[id_ax].set_xticks(np.arange(0, 25, 2))
 
-    ensity = kde.gaussian_kde(df['nel_diff'])
-    x = np.arange(-2, 2.5, 0.1)
-    y = density(x)
-    axs.plot(x, y, 'k', ls='dashed', lw=3,label='All hours')
+            axs[id_ax].legend()
 
-    plt.legend(ncol=2)
+            axs[id_ax].text(0.05, 1.05, '{letter})'.format(letter=string.ascii_lowercase[id_ax]),
+                        transform=axs[id_ax].transAxes, fontsize=14)
 
-    axs.set_xticks(np.arange(-2, 2.5, 0.5))
+            axs[id_ax].set_ylabel('Density', fontsize=14)
+            axs[id_ax].set_xlabel('Local time [hours]', fontsize=14)
+
+
+
+    # fig.supylabel('Density', fontsize=14)
+    # # fig.supxlabel('Local time [hours]')
+    # if mission == 'GR':
+    #     fig.supxlabel('Log $Ne_{RADAR}$ - $Ne_{GR}$ [$m^{-3}$]', fontsize=14)
+    # elif mission == 'GF':
+    #     fig.supxlabel('Log $Ne_{RADAR}$ - $Ne_{GF}$ [$m^{-3}$]', fontsize=14)
+
 
     fig.tight_layout()
     # plt.show()
-    plt.savefig("../figures/v2/densitytimeday_{mission}_hour_individual.png".format(mission=mission))
+    plt.savefig("../figures/v2/densitytimeday_{mission}_double.png".format(mission=mission))
     plt.close()
 
-plot_density_timeday_hour('GF')
-plot_density_timeday_hour('GR')
+# plot_density_timeday_hour('GF')
+# plot_density_timeday_hour('GR')
+
+def plot_timeseries_together():
+    mpl.rcParams.update({'font.size': 16})
+
+    # if mission == 'GR':
+    #     mission_full_name = 'GRACE'
+    #     gf_files = glob.glob('../data/processed/Absolute_Ne_v2/GRACE/*.csv')
+    # elif mission == 'GF':
+    #     mission_full_name = 'GRACE-FO'
+    #     gf_files = glob.glob('../data/processed/Absolute_Ne_v2/GRACEFO/*.csv')
+    # else:
+    #     print('Mission not recognized')
+    #     pass
+
+    gf_files = glob.glob('../data/processed/Absolute_Ne_v2/*/*.csv')
+
+    # one big graph
+    fig, ax = plt.subplots(figsize=(20, 8))
+
+    # for gf_file in gf_files:
+    for i in range(0,len(gf_files)):
+        gf_file = gf_files[i]
+        if i == 0:
+
+            gf = pd.read_csv(gf_file)
+            gf['Timestamp'] = pd.to_datetime(gf['Timestamp'])
+            gf['Absolute_Nel'] = np.log10(gf['Absolute_Ne'])
+
+            plt.scatter(gf['Timestamp'], gf['Absolute_Nel'], color='k',s=0.5)
+        else:
+            gf = pd.read_csv(gf_file)
+            gf['Timestamp'] = pd.to_datetime(gf['Timestamp'])
+            gf['Absolute_Nel'] = np.log10(gf['Absolute_Ne'])
+
+            plt.scatter(gf['Timestamp'], gf['Absolute_Nel'], color='k', s=0.5)
+
+
+    df_gr = pd.read_csv('../tables/v2/conjunctions_clean_{mission}.csv'.format(mission='GR')).drop(['Unnamed: 0'], axis=1)
+    df_gf = pd.read_csv('../tables/v2/conjunctions_clean_{mission}.csv'.format(mission='GF')).drop(['Unnamed: 0'], axis=1)
+    df = pd.concat([df_gr, df_gf], ignore_index=True, sort=True)
+
+    df['date'] = pd.to_datetime(df['date'])
+
+
+    for location in np.unique(df['Location']):
+        df_plot = df[df['Location'] == location]
+        plt.scatter(df_plot['date'], df_plot['nel_radar'], label=location)
+
+    plt.ylim(4,17)
+
+    ax.hlines(y=14, xmin=datetime.datetime(2002, 4, 4), xmax=datetime.datetime(2017, 6, 29), linewidth=4,
+              color=plt.rcParams["axes.prop_cycle"].by_key()["color"][0])
+    ax.hlines(y=14, xmin=datetime.datetime(2018, 5, 29), xmax=datetime.datetime(2020, 12, 27), linewidth=4,
+              color=plt.rcParams["axes.prop_cycle"].by_key()["color"][2])
+
+    plt.text(datetime.datetime(2009, 12, 1), 15, 'GRACE', ha='center', va='center',
+             color=plt.rcParams["axes.prop_cycle"].by_key()["color"][0], fontsize=16)
+    plt.text(datetime.datetime(2019, 9, 1), 15, 'GRACE-FO', ha='center', va='center',
+             color=plt.rcParams["axes.prop_cycle"].by_key()["color"][2], fontsize=16)
+
+    ax.xaxis_date()
+
+    # months = mdates.MonthLocator(interval=12)
+    # ax.xaxis.set_major_locator(months)
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    plt.xticks(rotation=45)
+
+    # ax.set_xlim(pd.Timestamp("2002-01"), pd.Timestamp("2020-12"))
+
+    plt.legend(loc='lower right')
+
+    # plt.title('GRACE and GRACE-FO Conjunctions', fontsize=16)
+    plt.xlabel('Dates', fontsize=18)
+    plt.ylabel("Log $Ne$ [$m^{-3}$]", fontsize=18)
+
+    plt.tight_layout()
+
+    # plt.show()
+    plt.savefig("../figures/v2/timeseries.png")
+    plt.close()
+
+plot_timeseries_together()
